@@ -12,7 +12,7 @@ document.onload = function() {
    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
  }
  if(params['access_token'] == null)
-  document.getElementById('authBlock').display = 'block';
+  document.getElementById('authBlock').style.display = 'block';
  else{
   token = params['access_token'];
   alert('Access Token:\n'+params['access_token']);
