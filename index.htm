@@ -5,7 +5,7 @@
 <title>FitData - Google Fit Download Client</title>
 <script>
 var token = null;
-document.onload = function() {
+window.onload = function() {
  var params = {}, queryString = location.hash.substring(1),
     regex = /([^&=]+)=([^&]*)/g, m;
  while (m = regex.exec(queryString)) {
