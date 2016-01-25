@@ -4,19 +4,24 @@
 <meta charset="UTF-8">
 <title>FitData - Google Fit Download Client</title>
 <script>
+var token = null;
 document.onload = function() {
  var params = {}, queryString = location.hash.substring(1),
     regex = /([^&=]+)=([^&]*)/g, m;
-while (m = regex.exec(queryString)) {
-  params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-}
-if(params['access-token'] != null)
- alert('Access Token:\n'+params['access-token']);
+ while (m = regex.exec(queryString)) {
+   params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+ }
+ if(params['access_token'] == null)
+  document.getElementById('authBlock').display = 'block';
+ else{
+  token = params['access_token'];
+  alert('Access Token:\n'+params['access_token']);
+ }
 }
 </script>
 </head>
 <body>
-<div>
+<div id="authBlock" style="display:none">
  <a href="https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/fitness.activity.read&client_id=953092066932-vk39j6li3ctlv6k3b00dcd39fo3ler99.apps.googleusercontent.com&response_type=token&redirect_uri=http://hirokiht.github.io/FitData/">Click Here to Connect Google Account</a>
 </div>
 </body>
