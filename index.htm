@@ -1,28 +1,191 @@
- <!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta charset="UTF-8">
 <title>FitData - Google Fit Download Client</title>
+<link rel="stylesheet" href="http://dbushell.github.io/Pikaday/css/pikaday.css">
+<style>
+#dateForm{
+	display: none;
+}
+
+#content table{
+	border: 1px solid black;
+    border-collapse: collapse;
+    float: left;
+    margin: 1%;
+}
+
+#content caption{
+	font-size: 150%;
+}
+
+#content th, #content td{
+	border: 1px solid gray;
+	text-align: center;
+	padding: 1% 0%;
+}
+</style>
+<script src="http://dbushell.github.io/Pikaday/pikaday.js"></script>
 <script>
-var token = null;
+var token = null, startDatePicker = null, endDatePicker = null;
+const fitnessAPI = 'https://www.googleapis.com/fitness/v1/users/me/';
+const stepsStreamId = 'raw:com.google.step_count.delta:com.xiaomi.hm.health:';
+const caloriesStreamId = 'raw:com.google.calories.expended:com.xiaomi.hm.health:';
+const activityStreamId = 'raw:com.google.activity.segment:com.xiaomi.hm.health:';
+const activity = ['In vehicle','Biking','On foot','Still (not moving)','Unknown (unable to detect activity)','Tilting (sudden device gravity change)','Walking','Running','Aerobics','Badminton','Baseball','Basketball','Biathlon','Handbiking','Mountain biking','Road biking','Spinning','Stationary biking','Utility biking','Boxing','Calisthenics','Circuit training','Cricket','Dancing','Elliptical','Fencing','Football (American)','Football (Australian)','Football (Soccer)','Frisbee','Gardening','Golf','Gymnastics','Handball','Hiking','Hockey','Horseback riding','Housework','Jumping rope','Kayaking','Kettlebell training','Kickboxing','Kitesurfing','Martial arts','Meditation','Mixed martial arts','P90X exercises','Paragliding','Pilates','Polo','Racquetball','Rock climbing','Rowing','Rowing machine','Rugby','Jogging','Running on sand','Running (treadmill)','Sailing','Scuba diving','Skateboarding','Skating','Cross skating','Inline skating (rollerblading)','Skiing','Back-country skiing','Cross-country skiing','Downhill skiing','Kite skiing','Roller skiing','Sledding','Sleeping','Snowboarding','Snowmobile','Snowshoeing','Squash','Stair climbing','Stair-climbing machine','Stand-up paddleboarding','Strength training','Surfing','Swimming','Swimming (swimming pool)','Swimming (open water)','Table tennis (ping pong)','Team sports','Tennis','Treadmill (walking or running)','Volleyball','Volleyball (beach)','Volleyball (indoor)','Wakeboarding','Walking (fitness)','Nording walking','Walking (treadmill)','Waterpolo','Weightlifting','Wheelchair','Windsurfing','Yoga','Zumba','Diving','Ergometer','Ice skating','Indoor skating','Curling','Other (unclassified fitness activity)','Light sleep','Deep sleep','REM sleep','Awake (during sleep cycle)'];
+
 window.onload = function() {
+ startDatePicker = new Pikaday({
+ 	field: document.getElementById('dateForm').start,
+ 	maxDate: new Date(),
+ 	defaultDate: new Date(2016,0,1),
+ 	setDefaultDate: true
+ });
+ endDatePicker = new Pikaday({
+ 	field: document.getElementById('dateForm').end, 
+ 	maxDate: new Date(),
+ 	defaultDate: new Date(),
+ 	setDefaultDate: true
+ });
+ document.getElementById('dateForm').onsubmit = query;
+
  var params = {}, queryString = location.hash.substring(1),
     regex = /([^&=]+)=([^&]*)/g, m;
  while (m = regex.exec(queryString)) {
    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
  }
- if(params['access_token'] == null)
-  document.getElementById('authBlock').style.display = 'block';
- else{
+ if(params['access_token'] != null){
+  document.getElementById('dateForm').style.display = 'block';
+  document.getElementById('authBlock').style.display = 'none';
   token = params['access_token'];
-  alert('Access Token:\n'+params['access_token']);
  }
+}
+
+function getData(streamId,cb){
+  if(typeof streamId != 'string' || typeof cb != 'function')
+  	return;
+  var req = new XMLHttpRequest();
+  req.open('GET', fitnessAPI+'dataSources/'+streamId+'/datasets/'+(startDatePicker.getDate().getTime()*1000000)+'-' + ((endDatePicker.getDate().getTime()+24*3600)*1000000));
+  req.setRequestHeader('Authorization','Bearer '+token);
+  req.onreadystatechange = function (e) {
+    if(req.readyState == 4)
+	  cb(req.status == 200? JSON.parse(req.response) : req.status);
+  };
+  req.send();
+}
+
+function getSteps(){
+	getData(stepsStreamId,function(data){
+		if(data.point == null)
+			return;
+		var points = data.point;
+		var table = document.getElementById('stepsTable'), tBody = null;
+		if(table == null){
+			table = document.createElement('table');
+			table.id = 'stepsTable';
+			table.caption = document.createElement('caption');
+			table.caption.innerHTML = 'Steps Data';
+			var tHead = table.createTHead(), headRow = tHead.insertRow();
+			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Step Count</th>';
+			tBody = table.createTBody();
+			document.getElementById('content').appendChild(table);
+		}else{
+			tBody = table.lastChild;
+			while(tBody.hasChildNodes())
+				tBody.removeChild(tBody.lastChild);
+		}
+		for(var i in points){
+			var row = tBody.insertRow();
+			row.insertCell().innerHTML = new Date(points[i].startTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = new Date(points[i].endTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = points[i].value[0].intVal;
+		}
+	});
+}
+
+function getCalories(){
+	getData(caloriesStreamId,function(data){
+		if(data.point == null)
+			return;
+		var points = data.point;
+		var table = document.getElementById('calTable'), tBody = null;
+		if(table == null){
+			table = document.createElement('table');
+			table.id = 'calTable';
+			table.caption = document.createElement('caption');
+			table.caption.innerHTML = 'Calories Data';
+			var tHead = table.createTHead(), headRow = tHead.insertRow();
+			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Calories</th>';
+			tBody = table.createTBody();
+			document.getElementById('content').appendChild(table);
+		}else{
+			tBody = table.lastChild;
+			while(tBody.hasChildNodes())
+				tBody.removeChild(tBody.lastChild);
+		}
+		for(var i in points){
+			var row = tBody.insertRow();
+			row.insertCell().innerHTML = new Date(points[i].startTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = new Date(points[i].endTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = points[i].value[0].fpVal;
+		}
+	});
+}
+
+function getActivity(){
+	getData(activityStreamId,function(data){
+		if(data.point == null)
+			return;
+		var points = data.point;
+		var table = document.getElementById('activityTable'), tBody = null;
+		if(table == null){
+			table = document.createElement('table');
+			table.id = 'activityTable';
+			table.caption = document.createElement('caption');
+			table.caption.innerHTML = 'Activty Data';
+			var tHead = table.createTHead(), headRow = tHead.insertRow();
+			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Activty</th>';
+			tBody = table.createTBody();
+			document.getElementById('content').appendChild(table);
+		}else{
+			tBody = table.lastChild;
+			while(tBody.hasChildNodes())
+				tBody.removeChild(tBody.lastChild);
+		}
+		for(var i in points){
+			var row = tBody.insertRow();
+			row.insertCell().innerHTML = new Date(points[i].startTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = new Date(points[i].endTimeNanos/1000000).toLocaleString();
+			row.insertCell().innerHTML = activity[points[i].value[0].intVal];
+		}
+	});
+}
+
+function query(){
+	getSteps();
+	getCalories();
+	getActivity();
+	return false;
 }
 </script>
 </head>
 <body>
-<div id="authBlock" style="display:none">
- <a href="https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/fitness.activity.read&client_id=953092066932-vk39j6li3ctlv6k3b00dcd39fo3ler99.apps.googleusercontent.com&response_type=token&redirect_uri=http://hirokiht.github.io/FitData/">Click Here to Connect Google Account</a>
+<div id="authBlock">
+ <form action="https://accounts.google.com/o/oauth2/v2/auth" method="get">
+ <input type="hidden" name="scope" value="https://www.googleapis.com/auth/fitness.activity.read">
+ <input type="hidden" name="client_id" value="953092066932-vk39j6li3ctlv6k3b00dcd39fo3ler99.apps.googleusercontent.com">
+ <input type="hidden" name="response_type" value="token">
+ <input type="hidden" name="redirect_uri" value="http://hirokiht.github.io/FitData/">
+ <input type="submit" value="Click Here to Connect Google Account">
+ </form>
 </div>
-</body>
-</html> 
+<form id="dateForm">
+<div>
+<span>Date: <input type="date" name="start"> - <input type="date" name="end"></span>
+<input type="submit" value="Query">
+</div>
+</form>
+<div id="content">
+</div>
+</body></html>
