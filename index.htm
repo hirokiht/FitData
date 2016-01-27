@@ -36,21 +36,25 @@ const stepsStreamId = 'raw:com.google.step_count.delta:com.xiaomi.hm.health:';
 const caloriesStreamId = 'raw:com.google.calories.expended:com.xiaomi.hm.health:';
 const activityStreamId = 'raw:com.google.activity.segment:com.xiaomi.hm.health:';
 const activity = ['In vehicle','Biking','On foot','Still (not moving)','Unknown (unable to detect Tilting)','activity (sudden device gravity change)',null,'Walking','Running','Aerobics','Badminton','Baseball','Basketball','Biathlon','Handbiking','Mountain biking','Road biking','Spinning','Stationary biking','Utility biking','Boxing','Calisthenics','Circuit training','Cricket','Dancing','Elliptical','Fencing','Football (American)','Football (Australian)','Football (Soccer)','Frisbee','Gardening','Golf','Gymnastics','Handball','Hiking','Hockey','Horseback riding','Housework','Jumping rope','Kayaking','Kettlebell training','Kickboxing','Kitesurfing','Martial arts','Meditation','Mixed martial arts','P90X exercises','Paragliding','Pilates','Polo','Racquetball','Rock climbing','Rowing','Rowing machine','Rugby','Jogging','Running on sand','Running (treadmill)','Sailing','Scuba diving','Skateboarding','Skating','Cross skating','Inline skating (rollerblading)','Skiing','Back-country skiing','Cross-country skiing','Downhill skiing','Kite skiing','Roller skiing','Sledding','Sleeping','Snowboarding','Snowmobile','Snowshoeing','Squash','Stair climbing','Stair-climbing machine','Stand-up paddleboarding','Strength training','Surfing','Swimming','Swimming (swimming pool)','Swimming (open water)','Table tennis (ping pong)','Team sports','Tennis','Treadmill (walking or running)','Volleyball','Volleyball (beach)','Volleyball (indoor)','Wakeboarding','Walking (fitness)','Nording walking','Walking (treadmill)','Waterpolo','Weightlifting','Wheelchair','Windsurfing','Yoga','Zumba','Diving','Ergometer','Ice skating','Indoor skating','Curling',null,'Other (unclassified fitness activity)','Light sleep','Deep sleep','REM sleep','Awake (during sleep cycle)'];
+const defaultStartDate = new Date(2016,0,1), defaultEndDate = new Date(); 
 
 window.onload = function() {
  if(!Modernizr.inputtypes.date){
 	startDatePicker = new Pikaday({
 		field: document.getElementById('dateForm').start,
 		maxDate: new Date(),
-		defaultDate: new Date(2016,0,1),
+		defaultDate: defaultStartDate,
 		setDefaultDate: true
 	});
 	endDatePicker = new Pikaday({
 		field: document.getElementById('dateForm').end, 
 		maxDate: new Date(),
-		defaultDate: new Date(),
+		defaultDate: defaultEndDate,
 		setDefaultDate: true
 	});
+ }else{
+  document.getElementById('dateForm').start.value = defaultStartDate.getFullYear()+'-'+(defaultStartDate.getMonth()<9? '0' : '')+(defaultStartDate.getMonth()+1)+'-'+(defaultStartDate.getDate()<9? '0' : '')+defaultStartDate.getDate();
+  document.getElementById('dateForm').end.value = defaultEndDate.getFullYear()+'-'+(defaultEndDate.getMonth()<9? '0' : '')+(defaultEndDate.getMonth()+1)+'-'+(defaultEndDate.getDate()<9? '0' : '')+defaultEndDate.getDate();
  }
  document.getElementById('dateForm').onsubmit = query;
 
@@ -70,8 +74,9 @@ function getData(streamId,cb){
   if(typeof streamId != 'string' || typeof cb != 'function')
   	return;
   var req = new XMLHttpRequest();
-  var startTime = startDatePicker != null? startDatePicker.getDate().getTime() : document.getElementById('dateForm').start.valueAsDate.getTime();
-  var endTime = endDatePicker != null? endDatePicker.getDate().getTime() : document.getElementById('dateForm').end.valueAsDate.getTime();
+  var dateForm = document.getElementById('dateForm');
+  var startTime = startDatePicker != null? startDatePicker.getDate().getTime() : dateForm.start.valueAsDate != null? dateForm.start.valueAsDate.getTime() : defaultStartDate.getTime();
+  var endTime = endDatePicker != null? endDatePicker.getDate().getTime() : dateForm.end.valueAsDate != null? dateForm.end.valueAsDate.getTime() : defaultEndDate.getTime();
   req.open('GET', fitnessAPI+'dataSources/'+streamId+'/datasets/'+(startTime*1000000)+'-' + ((endTime+24*3600)*1000000));
   req.setRequestHeader('Authorization','Bearer '+token);
   req.onreadystatechange = function (e) {
