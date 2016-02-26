@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html class=" "><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta charset="UTF-8">
 <title>FitData - Google Fit Download Client</title>
-<link rel="stylesheet" href="http://dbushell.github.io/Pikaday/css/pikaday.css">
+<link rel="stylesheet" href="FitData%20-%20Google%20Fit%20Download%20Client_files/pikaday.css">
 <style>
 #dateForm{
 	display: none;
@@ -27,8 +26,8 @@
 	padding: 1% 0%;
 }
 </style>
-<script src="modernizr-custom.js"></script>
-<script src="http://dbushell.github.io/Pikaday/pikaday.js"></script>
+<script src="FitData%20-%20Google%20Fit%20Download%20Client_files/modernizr-custom.js"></script>
+<script src="FitData%20-%20Google%20Fit%20Download%20Client_files/pikaday.js"></script>
 <script>
 var token = null, startDatePicker = null, endDatePicker = null;
 const fitnessAPI = 'https://www.googleapis.com/fitness/v1/users/me/';
@@ -100,7 +99,7 @@ function getSteps(){
 			table.caption = document.createElement('caption');
 			table.caption.innerHTML = 'Steps Data';
 			var tHead = table.createTHead(), headRow = tHead.insertRow();
-			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Step Count</th>';
+			headRow.innerHTML = '<th>Date</th><th>Step Count</th>';
 			tBody = table.createTBody();
 			document.getElementById('content').appendChild(table);
 		}else{
@@ -108,11 +107,27 @@ function getSteps(){
 			while(tBody.hasChildNodes())
 				tBody.removeChild(tBody.lastChild);
 		}
+		var lastdate = null, steps = 0;
 		for(var i in points){
+			var date = new Date(points[i].startTimeNanos/1000000);
+			if(date.toLocaleDateString() == lastdate){
+				steps += points[i].value[0].intVal;
+			}else{
+				if(lastdate != null){
+					var row = tBody.insertRow();
+					row.insertCell().innerHTML = lastdate;
+					row.insertCell().innerHTML = steps;
+				}
+				lastdate = date.toLocaleDateString();
+				steps = points[i].value[0].intVal;
+			}
+		}
+		if(lastdate != null){
 			var row = tBody.insertRow();
-			row.insertCell().innerHTML = new Date(points[i].startTimeNanos/1000000).toLocaleString();
-			row.insertCell().innerHTML = new Date(points[i].endTimeNanos/1000000).toLocaleString();
-			row.insertCell().innerHTML = points[i].value[0].intVal;
+			row.insertCell().innerHTML = lastdate;
+			row.insertCell().innerHTML = steps;
+			lastdate = null;
+			steps = 0;
 		}
 	});
 }
@@ -156,9 +171,9 @@ function getActivity(){
 			table = document.createElement('table');
 			table.id = 'activityTable';
 			table.caption = document.createElement('caption');
-			table.caption.innerHTML = 'Activity Data';
+			table.caption.innerHTML = 'Sleep Data';
 			var tHead = table.createTHead(), headRow = tHead.insertRow();
-			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Activity</th>';
+			headRow.innerHTML = '<th>Start Time</th><th>End Time</th><th>Total time</th>';
 			tBody = table.createTBody();
 			document.getElementById('content').appendChild(table);
 		}else{
@@ -166,11 +181,27 @@ function getActivity(){
 			while(tBody.hasChildNodes())
 				tBody.removeChild(tBody.lastChild);
 		}
+		var lastStartTime = null, lastEndTime = null;
 		for(var i in points){
-			var row = tBody.insertRow();
-			row.insertCell().innerHTML = new Date(points[i].startTimeNanos/1000000).toLocaleString();
-			row.insertCell().innerHTML = new Date(points[i].endTimeNanos/1000000).toLocaleString();
-			row.insertCell().innerHTML = activity[points[i].value[0].intVal];
+			if(points[i].value[0].intVal < 109 || points[i].value[0].intVal > 111)
+				continue;
+			var startTime = points[i].startTimeNanos/1000000;
+			var endTime = points[i].endTimeNanos/1000000;
+			var diff = endTime-startTime;
+			if(lastEndTime == startTime){
+				var diff = endTime-lastStartTime;
+				tBody.lastChild.children[1].innerHTML = new Date(endTime).toLocaleString();
+				tBody.lastChild.children[2].innerHTML = Math.floor(diff/3600000)+':'+diff%3600000/60000+':'+diff%60000/1000;
+				lastEndTime = endTime;
+			}else{
+			console.log('Starttime: '+startTime+' Endtime: '+endTime+'LastStart: '+lastStartTime+' LastEndtime: '+lastEndTime);
+				var row = tBody.insertRow();
+				row.insertCell().innerHTML = new Date(startTime).toLocaleString();
+				row.insertCell().innerHTML = new Date(endTime).toLocaleString();
+				row.insertCell().innerHTML = endTime-startTime;
+				lastStartTime = startTime;
+				lastEndTime = endTime;
+			}
 		}
 	});
 }
@@ -186,20 +217,21 @@ function query(){
 <body>
 <div id="authBlock">
  <form action="https://accounts.google.com/o/oauth2/v2/auth" method="get">
- <input type="hidden" name="scope" value="https://www.googleapis.com/auth/fitness.activity.read">
- <input type="hidden" name="client_id" value="953092066932-vk39j6li3ctlv6k3b00dcd39fo3ler99.apps.googleusercontent.com">
- <input type="hidden" name="response_type" value="token">
- <input type="hidden" name="redirect_uri" value="http://hirokiht.github.io/FitData/">
- <input type="submit" value="Click Here to Connect Google Account">
+ <input name="scope" value="https://www.googleapis.com/auth/fitness.activity.read" type="hidden">
+ <input name="client_id" value="953092066932-vk39j6li3ctlv6k3b00dcd39fo3ler99.apps.googleusercontent.com" type="hidden">
+ <input name="response_type" value="token" type="hidden">
+ <input name="redirect_uri" value="http://hirokiht.github.io/FitData/" type="hidden">
+ <input value="Click Here to Connect Google Account" type="submit">
  </form>
 </div>
 <form id="dateForm">
  <div>
-  <span>Date: <input type="date" name="start"> - <input type="date" name="end"></span>
-  <input type="submit" value="Query">
+  <span>Date: <input value="Fri Jan 01 2016" name="start" type="date"> - <input value="Fri Feb 26 2016" name="end" type="date"></span>
+  <input value="Query" type="submit">
  </div>
 </form>
 <div id="content">
 </div>
-</body>
-</html>
+
+
+<div style="position: static; left: auto; top: auto;" class="pika-single is-hidden is-bound"></div><div style="position: static; left: auto; top: auto;" class="pika-single is-hidden is-bound"></div></body></html>
