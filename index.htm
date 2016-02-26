@@ -192,7 +192,7 @@ function getActivity(){
 			if(lastEndTime == startTime){
 				var diff = endTime-lastStartTime;
 				tBody.lastChild.children[1].innerHTML = new Date(endTime).toLocaleString();
-				tBody.lastChild.children[2].innerHTML = Math.floor(diff/3600000)+':'+diff%3600000/60000+':'+diff%60000/1000;
+				tBody.lastChild.children[2].innerHTML = Math.floor(diff/3600000)+':'+Math.floor(diff%3600000/60000)+':'+diff%60000/1000;
 				lastEndTime = endTime;
 			}else{
 				var row = tBody.insertRow();
