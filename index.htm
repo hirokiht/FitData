@@ -195,12 +195,13 @@ function getActivity(){
 				tBody.lastChild.children[2].innerHTML = Math.floor(diff/3600000)+':'+Math.floor(diff%3600000/60000)+':'+diff%60000/1000;
 				lastEndTime = endTime;
 			}else{
+				lastStartTime = startTime;
+				lastEndTime = endTime;
+				var diff = endTime-lastStartTime;
 				var row = tBody.insertRow();
 				row.insertCell().innerHTML = new Date(startTime).toLocaleString();
 				row.insertCell().innerHTML = new Date(endTime).toLocaleString();
-				row.insertCell().innerHTML = endTime-startTime;
-				lastStartTime = startTime;
-				lastEndTime = endTime;
+				row.insertCell().innerHTML = Math.floor(diff/3600000)+':'+Math.floor(diff%3600000/60000)+':'+diff%60000/1000;
 			}
 		}
 	});
