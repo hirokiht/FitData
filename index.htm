@@ -195,7 +195,6 @@ function getActivity(){
 				tBody.lastChild.children[2].innerHTML = Math.floor(diff/3600000)+':'+diff%3600000/60000+':'+diff%60000/1000;
 				lastEndTime = endTime;
 			}else{
-			console.log('Starttime: '+startTime+' Endtime: '+endTime+'LastStart: '+lastStartTime+' LastEndtime: '+lastEndTime);
 				var row = tBody.insertRow();
 				row.insertCell().innerHTML = new Date(startTime).toLocaleString();
 				row.insertCell().innerHTML = new Date(endTime).toLocaleString();
